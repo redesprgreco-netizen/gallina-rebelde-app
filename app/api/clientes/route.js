@@ -6,6 +6,20 @@ import { generarCodigoCorto } from '../../../lib/codigo'
 export async function POST(req) {
   const body = await req.json()
 
+  // Si ya existe un cliente con ese teléfono, lo regresamos tal cual en vez de
+  // crear uno nuevo (evita duplicados si alguien se "registra" dos veces).
+  if (body.telefono) {
+    const existente = await supabaseAdmin
+      .from('clientes')
+      .select('*')
+      .eq('telefono', body.telefono)
+      .maybeSingle()
+
+    if (existente.data) {
+      return Response.json(existente.data)
+    }
+  }
+
   // Intentamos generar un código único, reintentando si por casualidad ya existe uno igual.
   let cliente = null
   let error = null

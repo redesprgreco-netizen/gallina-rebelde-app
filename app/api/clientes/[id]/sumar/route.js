@@ -1,10 +1,14 @@
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin'
 import { premioParaCompra, META_ESTRELLAS } from '../../../../../lib/premios'
 import { buscarClientePorIdOCodigo } from '../../../../../lib/buscarCliente'
+import { tieneSesionValida, respuestaNoAutorizado } from '../../../../../lib/auth'
 
 // POST /api/clientes/:id/sumar -> suma 1 estrella cuando el cliente compra
 // El :id puede ser el ID largo (uuid) o el código corto del cliente.
+// Solo el empleado con sesión iniciada (contraseña de /admin-login) puede sumar.
 export async function POST(req, { params }) {
+  if (!tieneSesionValida(req)) return respuestaNoAutorizado()
+
   const { id } = params
 
   const { data: cliente, error: errorBusqueda } = await buscarClientePorIdOCodigo(id)

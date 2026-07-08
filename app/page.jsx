@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import TarjetaCliente from '../components/TarjetaCliente'
+import BannerAvisos from '../components/BannerAvisos'
 
 const DORADO = '#F5A623'
-const ROJO = '#C81D25'
 const NEGRO = '#0d0d0d'
 
 export default function HomePage() {
@@ -11,6 +12,35 @@ export default function HomePage() {
   const [telefono, setTelefono] = useState('')
   const [cliente, setCliente] = useState(null)
   const [error, setError] = useState(null)
+  const [revisandoSesion, setRevisandoSesion] = useState(true)
+  const [banner, setBanner] = useState('')
+
+  // Si el navegador ya tiene un código guardado de una visita anterior, mostramos
+  // su tarjeta directo en vez del formulario de registro.
+  useEffect(() => {
+    const guardado = window.localStorage.getItem('gr_codigo')
+    if (!guardado) {
+      setRevisandoSesion(false)
+      return
+    }
+    fetch(`/api/clientes/${guardado}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) setCliente(data)
+        else window.localStorage.removeItem('gr_codigo')
+      })
+      .finally(() => setRevisandoSesion(false))
+  }, [])
+
+  // Cargamos el banner de avisos/ofertas que el dueño configura desde /admin.
+  useEffect(() => {
+    fetch('/api/config')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.banner_activo && data.banner_texto) setBanner(data.banner_texto)
+      })
+      .catch(() => {})
+  }, [])
 
   async function registrarse(e) {
     e.preventDefault()
@@ -27,9 +57,15 @@ export default function HomePage() {
         return
       }
       setCliente(data)
+      window.localStorage.setItem('gr_codigo', data.codigo)
     } catch (err) {
       setError('Error de conexión')
     }
+  }
+
+  function salir() {
+    window.localStorage.removeItem('gr_codigo')
+    setCliente(null)
   }
 
   const contenedorEstilo = {
@@ -39,63 +75,22 @@ export default function HomePage() {
     fontFamily: 'system-ui, sans-serif',
   }
 
+  if (revisandoSesion) {
+    return <div style={contenedorEstilo} />
+  }
+
   if (cliente) {
     return (
       <div style={contenedorEstilo}>
-        <div style={{ maxWidth: 420, margin: '0 auto', padding: 24, textAlign: 'center' }}>
-          <img src="/logo-circular.png" alt="La Gallina Rebelde" style={{ width: 100, height: 100, borderRadius: '50%', marginTop: 20 }} />
-          <h1 style={{ fontSize: 22, marginTop: 16, color: DORADO }}>¡Bienvenido/a, {cliente.nombre || 'cliente'}!</h1>
-          <p style={{ marginTop: 8, color: '#bbb' }}>Muestra este código en cada compra para sumar estrellas.</p>
-
-          <div style={{
-            marginTop: 24, padding: 20, background: 'white', borderRadius: 12,
-            display: 'inline-block',
-          }}>
-            <img
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(cliente.codigo)}`}
-              alt="Tu código QR"
-              width={220}
-              height={220}
-            />
-          </div>
-
-          <p style={{ marginTop: 14, fontSize: 28, letterSpacing: 4, fontWeight: 700, color: DORADO }}>
-            {cliente.codigo}
-          </p>
-
-          <p style={{ marginTop: 4, fontSize: 12, color: '#666' }}>
-            Muestra el QR o dicta tu código en la tienda
-          </p>
-
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, margin: '20px 0' }}>
-            {Array.from({ length: cliente.meta_estrellas }).map((_, i) => (
-              <span key={i} style={{ fontSize: 28, color: i < cliente.estrellas ? DORADO : '#333' }}>★</span>
-            ))}
-          </div>
-
-          <p style={{ color: '#ccc' }}>Compra {cliente.estrellas} de {cliente.meta_estrellas}</p>
-
-          <p style={{ marginTop: 32, fontSize: 13, color: '#666' }}>
-            (Próximamente: botón para agregar esta tarjeta a Apple/Google Wallet)
-          </p>
-
-          <a
-            href="/scan"
-            style={{
-              display: 'block', marginTop: 20, textAlign: 'center', padding: 12,
-              borderRadius: 8, border: `1px solid #444`, color: '#888',
-              fontSize: 13, textDecoration: 'none',
-            }}
-          >
-            Acceso empleados →
-          </a>
-        </div>
+        <BannerAvisos texto={banner} />
+        <TarjetaCliente cliente={cliente} onSalir={salir} />
       </div>
     )
   }
 
   return (
     <div style={contenedorEstilo}>
+      <BannerAvisos texto={banner} />
       <div style={{ maxWidth: 420, margin: '0 auto', padding: 24 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <img src="/logo-banner.png" alt="La Gallina Rebelde" style={{ width: '100%', borderRadius: 12, marginTop: 20 }} />
@@ -148,9 +143,20 @@ export default function HomePage() {
         </div>
 
         <a
-          href="/scan"
+          href="/mi-tarjeta"
           style={{
             display: 'block', marginTop: 20, textAlign: 'center', padding: 12,
+            borderRadius: 8, border: `1px solid ${DORADO}`, color: DORADO,
+            fontSize: 13, textDecoration: 'none', fontWeight: 700,
+          }}
+        >
+          Ya me registré, ver mis estrellas →
+        </a>
+
+        <a
+          href="/scan"
+          style={{
+            display: 'block', marginTop: 10, textAlign: 'center', padding: 12,
             borderRadius: 8, border: `1px solid #444`, color: '#888',
             fontSize: 13, textDecoration: 'none',
           }}

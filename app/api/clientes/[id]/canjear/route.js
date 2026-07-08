@@ -1,8 +1,12 @@
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin'
 import { buscarClientePorIdOCodigo } from '../../../../../lib/buscarCliente'
+import { tieneSesionValida, respuestaNoAutorizado } from '../../../../../lib/auth'
 
 // POST /api/clientes/:id/canjear -> resetea las estrellas cuando el cliente canjea su premio
+// Solo el empleado con sesión iniciada puede confirmar el canje.
 export async function POST(req, { params }) {
+  if (!tieneSesionValida(req)) return respuestaNoAutorizado()
+
   const { id } = params
 
   const { data: cliente, error: errorBusqueda } = await buscarClientePorIdOCodigo(id)
