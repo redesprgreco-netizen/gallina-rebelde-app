@@ -2,6 +2,7 @@
 
 create table if not exists clientes (
   id uuid default gen_random_uuid() primary key,
+  codigo text unique,
   nombre text,
   telefono text,
   estrellas int default 0,

@@ -54,6 +54,16 @@ En 1-2 minutos tendrás una URL pública, por ejemplo `https://tu-app.vercel.app
 3. Cuando el cliente compra, escaneas su código → se suma 1 estrella automáticamente.
 4. Cuando llega a la meta, usas el endpoint `/api/clientes/:id/canjear` para resetear sus estrellas al entregar el premio (esto lo podemos conectar a un botón en el `/scan` más adelante).
 
+## Migración necesaria si ya tenías clientes creados
+
+Si ya habías corrido el `supabase-schema.sql` antes, corre esto en el SQL Editor de Supabase para agregar el código corto:
+
+```sql
+alter table clientes add column if not exists codigo text unique;
+```
+
+Los clientes creados antes de este cambio no tendrán código corto (quedará vacío), pero su ID largo sigue funcionando igual en `/scan`.
+
 ## Qué falta para la versión completa
 
 - [ ] Generar el QR visual real en la página de bienvenida (ahora mismo se muestra el ID como texto)

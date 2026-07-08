@@ -1,15 +1,13 @@
 import { supabaseAdmin } from '../../../../../lib/supabaseAdmin'
 import { premioParaCompra, META_ESTRELLAS } from '../../../../../lib/premios'
+import { buscarClientePorIdOCodigo } from '../../../../../lib/buscarCliente'
 
 // POST /api/clientes/:id/sumar -> suma 1 estrella cuando el cliente compra
+// El :id puede ser el ID largo (uuid) o el código corto del cliente.
 export async function POST(req, { params }) {
   const { id } = params
 
-  const { data: cliente, error: errorBusqueda } = await supabaseAdmin
-    .from('clientes')
-    .select('*')
-    .eq('id', id)
-    .single()
+  const { data: cliente, error: errorBusqueda } = await buscarClientePorIdOCodigo(id)
 
   if (errorBusqueda || !cliente) {
     return Response.json({ error: 'Cliente no encontrado' }, { status: 404 })
@@ -22,7 +20,7 @@ export async function POST(req, { params }) {
   const { data: actualizado, error: errorUpdate } = await supabaseAdmin
     .from('clientes')
     .update({ estrellas: nuevasEstrellas })
-    .eq('id', id)
+    .eq('id', cliente.id)
     .select()
     .single()
 
@@ -31,14 +29,10 @@ export async function POST(req, { params }) {
   }
 
   await supabaseAdmin.from('historial').insert({
-    cliente_id: id,
+    cliente_id: cliente.id,
     accion: 'suma',
     premio: premio ? premio.texto : null,
   })
-
-  // Aquí, más adelante, llamaremos a PassKit/PassSlot para actualizar
-  // el pase de Apple/Google Wallet del cliente con su nuevo número de estrellas.
-  // await actualizarPaseWallet(actualizado)
 
   return Response.json({
     ...actualizado,

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { QRCodeSVG } from 'qrcode.react'
 
 const DORADO = '#F5A623'
 const ROJO = '#C81D25'
@@ -52,11 +51,20 @@ export default function HomePage() {
             marginTop: 24, padding: 20, background: 'white', borderRadius: 12,
             display: 'inline-block',
           }}>
-            <QRCodeSVG value={cliente.id} size={200} />
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(cliente.codigo)}`}
+              alt="Tu código QR"
+              width={220}
+              height={220}
+            />
           </div>
 
-          <p style={{ marginTop: 12, fontSize: 12, color: '#666' }}>
-            Muéstralo en la tienda, ellos lo escanean con su cámara
+          <p style={{ marginTop: 14, fontSize: 28, letterSpacing: 4, fontWeight: 700, color: DORADO }}>
+            {cliente.codigo}
+          </p>
+
+          <p style={{ marginTop: 4, fontSize: 12, color: '#666' }}>
+            Muestra el QR o dicta tu código en la tienda
           </p>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: 6, margin: '20px 0' }}>
@@ -70,6 +78,17 @@ export default function HomePage() {
           <p style={{ marginTop: 32, fontSize: 13, color: '#666' }}>
             (Próximamente: botón para agregar esta tarjeta a Apple/Google Wallet)
           </p>
+
+          <a
+            href="/scan"
+            style={{
+              display: 'block', marginTop: 20, textAlign: 'center', padding: 12,
+              borderRadius: 8, border: `1px solid #444`, color: '#888',
+              fontSize: 13, textDecoration: 'none',
+            }}
+          >
+            Acceso empleados →
+          </a>
         </div>
       </div>
     )
@@ -127,6 +146,17 @@ export default function HomePage() {
           <p>Compra 4 → 25% de descuento en tu compra total</p>
           <p>Compra 6 → ¡Papas gratis!</p>
         </div>
+
+        <a
+          href="/scan"
+          style={{
+            display: 'block', marginTop: 20, textAlign: 'center', padding: 12,
+            borderRadius: 8, border: `1px solid #444`, color: '#888',
+            fontSize: 13, textDecoration: 'none',
+          }}
+        >
+          Acceso empleados →
+        </a>
       </div>
     </div>
   )

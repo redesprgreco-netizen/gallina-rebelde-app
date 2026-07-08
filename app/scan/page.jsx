@@ -10,6 +10,7 @@ export default function ScanPage() {
   const [resultado, setResultado] = useState(null)
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState(null)
+  const [codigoManual, setCodigoManual] = useState('')
   const scannerRef = useRef(null)
 
   useEffect(() => {
@@ -80,9 +81,19 @@ export default function ScanPage() {
   function escanearOtro() {
     setResultado(null)
     setError(null)
+    setCodigoManual('')
     if (scannerRef.current) {
       scannerRef.current.resume()
     }
+  }
+
+  async function enviarCodigoManual(e) {
+    e.preventDefault()
+    if (!codigoManual.trim()) return
+    if (scannerRef.current) {
+      await scannerRef.current.pause().catch(() => {})
+    }
+    await procesarEscaneo(codigoManual.trim())
   }
 
   return (
@@ -99,6 +110,27 @@ export default function ScanPage() {
         </div>
 
         <div id="lector-qr" style={{ width: '100%', borderRadius: 12, overflow: 'hidden', border: `2px solid ${DORADO}` }} />
+
+        {!resultado && (
+          <form onSubmit={enviarCodigoManual} style={{ marginTop: 16, display: 'flex', gap: 8 }}>
+            <input
+              type="text"
+              placeholder="O escribe el código (ej: A3F9K2)"
+              value={codigoManual}
+              onChange={(e) => setCodigoManual(e.target.value.toUpperCase())}
+              style={{
+                flex: 1, padding: 12, borderRadius: 8, border: '1px solid #444',
+                background: '#1a1a1a', color: 'white', letterSpacing: 2, textTransform: 'uppercase',
+              }}
+            />
+            <button
+              type="submit"
+              style={{ padding: '0 18px', borderRadius: 8, border: 'none', background: DORADO, color: '#000', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Sumar
+            </button>
+          </form>
+        )}
 
         {cargando && <p style={{ marginTop: 16, textAlign: 'center', color: DORADO }}>Procesando...</p>}
 
