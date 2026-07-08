@@ -35,10 +35,11 @@ Crea un repo en GitHub y súbelo (`git remote add origin ...` y `git push`).
 
 1. Entra a vercel.com → **Add New Project**
 2. Selecciona tu repositorio de GitHub
-3. En **Environment Variables**, agrega las 3 variables de tu `.env.local`:
+3. En **Environment Variables**, agrega las 4 variables de tu `.env.local`:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
    - `SUPABASE_SERVICE_ROLE_KEY`
+   - `ADMIN_PASSWORD` (contraseña para entrar a `/scan`)
 4. Dale a **Deploy**
 
 En 1-2 minutos tendrás una URL pública, por ejemplo `https://tu-app.vercel.app`.

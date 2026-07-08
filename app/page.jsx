@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { QRCodeSVG } from 'qrcode.react'
 
 const DORADO = '#F5A623'
 const ROJO = '#C81D25'
@@ -47,10 +48,16 @@ export default function HomePage() {
           <h1 style={{ fontSize: 22, marginTop: 16, color: DORADO }}>¡Bienvenido/a, {cliente.nombre || 'cliente'}!</h1>
           <p style={{ marginTop: 8, color: '#bbb' }}>Muestra este código en cada compra para sumar estrellas.</p>
 
-          <div style={{ marginTop: 24, padding: 20, background: '#1a1a1a', borderRadius: 12, border: `2px solid ${DORADO}` }}>
-            <p style={{ fontSize: 13, color: '#888' }}>Tu ID de cliente:</p>
-            <p style={{ fontFamily: 'monospace', fontSize: 13, wordBreak: 'break-all', color: DORADO }}>{cliente.id}</p>
+          <div style={{
+            marginTop: 24, padding: 20, background: 'white', borderRadius: 12,
+            display: 'inline-block',
+          }}>
+            <QRCodeSVG value={cliente.id} size={200} />
           </div>
+
+          <p style={{ marginTop: 12, fontSize: 12, color: '#666' }}>
+            Muéstralo en la tienda, ellos lo escanean con su cámara
+          </p>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: 6, margin: '20px 0' }}>
             {Array.from({ length: cliente.meta_estrellas }).map((_, i) => (
