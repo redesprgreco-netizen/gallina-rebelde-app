@@ -1,50 +1,24 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import TarjetaCliente from '../components/TarjetaCliente'
-import BannerAvisos from '../components/BannerAvisos'
+import { useState } from 'react'
 
 const DORADO = '#F5A623'
+const ROJO = '#C81D25'
 const NEGRO = '#0d0d0d'
 
 export default function HomePage() {
+  const [modo, setModo] = useState('elegir') // 'elegir' | 'registro' | 'consultar'
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
+  const [telefonoConsulta, setTelefonoConsulta] = useState('')
   const [cliente, setCliente] = useState(null)
   const [error, setError] = useState(null)
-  const [revisandoSesion, setRevisandoSesion] = useState(true)
-  const [banner, setBanner] = useState('')
-
-  // Si el navegador ya tiene un código guardado de una visita anterior, mostramos
-  // su tarjeta directo en vez del formulario de registro.
-  useEffect(() => {
-    const guardado = window.localStorage.getItem('gr_codigo')
-    if (!guardado) {
-      setRevisandoSesion(false)
-      return
-    }
-    fetch(`/api/clientes/${guardado}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data) setCliente(data)
-        else window.localStorage.removeItem('gr_codigo')
-      })
-      .finally(() => setRevisandoSesion(false))
-  }, [])
-
-  // Cargamos el banner de avisos/ofertas que el dueño configura desde /admin.
-  useEffect(() => {
-    fetch('/api/config')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.banner_activo && data.banner_texto) setBanner(data.banner_texto)
-      })
-      .catch(() => {})
-  }, [])
+  const [cargando, setCargando] = useState(false)
 
   async function registrarse(e) {
     e.preventDefault()
     setError(null)
+    setCargando(true)
     try {
       const res = await fetch('/api/clientes', {
         method: 'POST',
@@ -57,15 +31,30 @@ export default function HomePage() {
         return
       }
       setCliente(data)
-      window.localStorage.setItem('gr_codigo', data.codigo)
     } catch (err) {
       setError('Error de conexión')
+    } finally {
+      setCargando(false)
     }
   }
 
-  function salir() {
-    window.localStorage.removeItem('gr_codigo')
-    setCliente(null)
+  async function consultarPorTelefono(e) {
+    e.preventDefault()
+    setError(null)
+    setCargando(true)
+    try {
+      const res = await fetch(`/api/clientes/telefono/${encodeURIComponent(telefonoConsulta)}`)
+      const data = await res.json()
+      if (!res.ok) {
+        setError(data.error || 'No encontramos tu registro')
+        return
+      }
+      setCliente(data)
+    } catch (err) {
+      setError('Error de conexión')
+    } finally {
+      setCargando(false)
+    }
   }
 
   const contenedorEstilo = {
@@ -75,65 +64,207 @@ export default function HomePage() {
     fontFamily: 'system-ui, sans-serif',
   }
 
-  if (revisandoSesion) {
-    return <div style={contenedorEstilo} />
+  const inputEstilo = {
+    width: '100%', padding: 12, marginBottom: 12, borderRadius: 8,
+    border: `1px solid #444`, background: '#1a1a1a', color: 'white',
   }
 
+  const botonEstilo = {
+    width: '100%', padding: 14, borderRadius: 8, border: 'none',
+    background: DORADO, color: '#000', fontWeight: 700, cursor: 'pointer',
+    letterSpacing: 1,
+  }
+
+  // Pantalla: tarjeta de estrellas (tras registrarse o consultar)
   if (cliente) {
     return (
       <div style={contenedorEstilo}>
-        <BannerAvisos texto={banner} />
-        <TarjetaCliente cliente={cliente} onSalir={salir} />
+        <div style={{ maxWidth: 420, margin: '0 auto', padding: 24, textAlign: 'center' }}>
+          <img src="/logo-circular.png" alt="La Gallina Rebelde" style={{ width: 100, height: 100, borderRadius: '50%', marginTop: 20 }} />
+          <h1 style={{ fontSize: 22, marginTop: 16, color: DORADO }}>¡Hola, {cliente.nombre || 'cliente'}!</h1>
+          <p style={{ marginTop: 8, color: '#bbb' }}>Muestra este código en cada compra para sumar estrellas.</p>
+
+          <div style={{
+            marginTop: 24, padding: 20, background: 'white', borderRadius: 12,
+            display: 'inline-block',
+          }}>
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(cliente.codigo)}`}
+              alt="Tu código QR"
+              width={220}
+              height={220}
+            />
+          </div>
+
+          <p style={{ marginTop: 14, fontSize: 28, letterSpacing: 4, fontWeight: 700, color: DORADO }}>
+            {cliente.codigo}
+          </p>
+
+          <p style={{ marginTop: 4, fontSize: 12, color: '#666' }}>
+            Muestra el QR o dicta tu código en la tienda
+          </p>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, margin: '20px 0' }}>
+            {Array.from({ length: cliente.meta_estrellas }).map((_, i) => (
+              <span key={i} style={{ fontSize: 28, color: i < cliente.estrellas ? DORADO : '#333' }}>★</span>
+            ))}
+          </div>
+
+          <p style={{ color: '#ccc' }}>Compra {cliente.estrellas} de {cliente.meta_estrellas}</p>
+
+          <p style={{ marginTop: 20, fontSize: 13, color: '#888' }}>
+            ¿Perdiste esta pantalla? Vuelve a esta página y consulta con tu teléfono cuando quieras.
+          </p>
+
+          <button
+            onClick={() => { setCliente(null); setModo('elegir'); setError(null) }}
+            style={{
+              marginTop: 16, padding: '10px 20px', borderRadius: 8, border: '1px solid #444',
+              background: 'transparent', color: '#aaa', cursor: 'pointer',
+            }}
+          >
+            Volver
+          </button>
+
+          <a
+            href="/scan"
+            style={{
+              display: 'block', marginTop: 20, textAlign: 'center', padding: 12,
+              borderRadius: 8, border: `1px solid #444`, color: '#888',
+              fontSize: 13, textDecoration: 'none',
+            }}
+          >
+            Acceso empleados →
+          </a>
+        </div>
       </div>
     )
   }
 
+  // Pantalla: consultar con teléfono
+  if (modo === 'consultar') {
+    return (
+      <div style={contenedorEstilo}>
+        <div style={{ maxWidth: 420, margin: '0 auto', padding: 24 }}>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <img src="/logo-circular.png" alt="La Gallina Rebelde" style={{ width: 90, height: 90, borderRadius: '50%', marginTop: 20 }} />
+          </div>
+
+          <h1 style={{ fontSize: 20, marginBottom: 16, color: DORADO, textAlign: 'center' }}>
+            VER MIS ESTRELLAS
+          </h1>
+
+          <form onSubmit={consultarPorTelefono}>
+            <input
+              type="tel"
+              placeholder="Tu teléfono"
+              value={telefonoConsulta}
+              onChange={(e) => setTelefonoConsulta(e.target.value)}
+              style={inputEstilo}
+            />
+            <button type="submit" disabled={cargando} style={botonEstilo}>
+              {cargando ? 'Buscando...' : 'CONSULTAR'}
+            </button>
+          </form>
+
+          {error && <p style={{ color: '#ff8a8a', marginTop: 12, textAlign: 'center' }}>{error}</p>}
+
+          <button
+            onClick={() => { setModo('elegir'); setError(null) }}
+            style={{
+              width: '100%', marginTop: 16, padding: 12, borderRadius: 8, border: '1px solid #444',
+              background: 'transparent', color: '#aaa', cursor: 'pointer',
+            }}
+          >
+            ← Volver
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Pantalla: registro nuevo
+  if (modo === 'registro') {
+    return (
+      <div style={contenedorEstilo}>
+        <div style={{ maxWidth: 420, margin: '0 auto', padding: 24 }}>
+          <div style={{ textAlign: 'center', marginBottom: 24 }}>
+            <img src="/logo-banner.png" alt="La Gallina Rebelde" style={{ width: '100%', borderRadius: 12, marginTop: 20 }} />
+          </div>
+
+          <h1 style={{ fontSize: 20, marginBottom: 16, color: DORADO, textAlign: 'center' }}>
+            ÚNETE AL PROGRAMA DE ESTRELLAS
+          </h1>
+
+          <form onSubmit={registrarse}>
+            <input
+              type="text"
+              placeholder="Tu nombre"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              style={inputEstilo}
+            />
+            <input
+              type="tel"
+              placeholder="Tu teléfono"
+              value={telefono}
+              onChange={(e) => setTelefono(e.target.value)}
+              style={{ ...inputEstilo, marginBottom: 16 }}
+            />
+            <button type="submit" disabled={cargando} style={botonEstilo}>
+              {cargando ? 'Registrando...' : 'REGISTRARME'}
+            </button>
+          </form>
+
+          {error && <p style={{ color: '#ff8a8a', marginTop: 12, textAlign: 'center' }}>{error}</p>}
+
+          <div style={{ marginTop: 32, padding: 16, background: '#1a1a1a', borderRadius: 8, fontSize: 13, color: '#999' }}>
+            <p style={{ color: DORADO, fontWeight: 700, marginBottom: 6 }}>Cómo funciona:</p>
+            <p>Compra 2 → 10% de descuento</p>
+            <p>Compra 4 → 25% de descuento en tu compra total</p>
+            <p>Compra 6 → ¡Papas gratis!</p>
+          </div>
+
+          <button
+            onClick={() => { setModo('elegir'); setError(null) }}
+            style={{
+              width: '100%', marginTop: 16, padding: 12, borderRadius: 8, border: '1px solid #444',
+              background: 'transparent', color: '#aaa', cursor: 'pointer',
+            }}
+          >
+            ← Volver
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Pantalla inicial: elegir entre registrarse o consultar
   return (
     <div style={contenedorEstilo}>
-      <BannerAvisos texto={banner} />
       <div style={{ maxWidth: 420, margin: '0 auto', padding: 24 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <img src="/logo-banner.png" alt="La Gallina Rebelde" style={{ width: '100%', borderRadius: 12, marginTop: 20 }} />
         </div>
 
-        <h1 style={{ fontSize: 20, marginBottom: 16, color: DORADO, textAlign: 'center' }}>
-          ÚNETE AL PROGRAMA DE ESTRELLAS
+        <h1 style={{ fontSize: 20, marginBottom: 24, color: DORADO, textAlign: 'center' }}>
+          PROGRAMA DE ESTRELLAS
         </h1>
 
-        <form onSubmit={registrarse}>
-          <input
-            type="text"
-            placeholder="Tu nombre"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            style={{
-              width: '100%', padding: 12, marginBottom: 12, borderRadius: 8,
-              border: `1px solid #444`, background: '#1a1a1a', color: 'white',
-            }}
-          />
-          <input
-            type="tel"
-            placeholder="Tu teléfono"
-            value={telefono}
-            onChange={(e) => setTelefono(e.target.value)}
-            style={{
-              width: '100%', padding: 12, marginBottom: 16, borderRadius: 8,
-              border: `1px solid #444`, background: '#1a1a1a', color: 'white',
-            }}
-          />
-          <button
-            type="submit"
-            style={{
-              width: '100%', padding: 14, borderRadius: 8, border: 'none',
-              background: DORADO, color: '#000', fontWeight: 700, cursor: 'pointer',
-              letterSpacing: 1,
-            }}
-          >
-            REGISTRARME
-          </button>
-        </form>
+        <button onClick={() => setModo('registro')} style={{ ...botonEstilo, marginBottom: 12 }}>
+          SOY NUEVO, REGISTRARME
+        </button>
 
-        {error && <p style={{ color: '#ff8a8a', marginTop: 12, textAlign: 'center' }}>{error}</p>}
+        <button
+          onClick={() => setModo('consultar')}
+          style={{
+            width: '100%', padding: 14, borderRadius: 8, border: `2px solid ${DORADO}`,
+            background: 'transparent', color: DORADO, fontWeight: 700, cursor: 'pointer',
+            letterSpacing: 1,
+          }}
+        >
+          YA SOY CLIENTE, VER MIS ESTRELLAS
+        </button>
 
         <div style={{ marginTop: 32, padding: 16, background: '#1a1a1a', borderRadius: 8, fontSize: 13, color: '#999' }}>
           <p style={{ color: DORADO, fontWeight: 700, marginBottom: 6 }}>Cómo funciona:</p>
@@ -143,20 +274,9 @@ export default function HomePage() {
         </div>
 
         <a
-          href="/mi-tarjeta"
-          style={{
-            display: 'block', marginTop: 20, textAlign: 'center', padding: 12,
-            borderRadius: 8, border: `1px solid ${DORADO}`, color: DORADO,
-            fontSize: 13, textDecoration: 'none', fontWeight: 700,
-          }}
-        >
-          Ya me registré, ver mis estrellas →
-        </a>
-
-        <a
           href="/scan"
           style={{
-            display: 'block', marginTop: 10, textAlign: 'center', padding: 12,
+            display: 'block', marginTop: 20, textAlign: 'center', padding: 12,
             borderRadius: 8, border: `1px solid #444`, color: '#888',
             fontSize: 13, textDecoration: 'none',
           }}

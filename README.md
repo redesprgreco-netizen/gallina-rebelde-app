@@ -56,39 +56,19 @@ En 1-2 minutos tendrás una URL pública, por ejemplo `https://tu-app.vercel.app
 
 ## Migración necesaria si ya tenías clientes creados
 
-Si ya habías corrido el `supabase-schema.sql` antes, corre esto en el SQL Editor de Supabase:
+Si ya habías corrido el `supabase-schema.sql` antes, corre esto en el SQL Editor de Supabase para agregar el código corto:
 
 ```sql
 alter table clientes add column if not exists codigo text unique;
-
-create table if not exists configuracion (
-  id int primary key default 1,
-  banner_texto text default '',
-  banner_activo boolean default false,
-  updated_at timestamp with time zone default now()
-);
-
-insert into configuracion (id, banner_texto, banner_activo)
-values (1, '', false)
-on conflict (id) do nothing;
-
-alter table configuracion enable row level security;
 ```
 
 Los clientes creados antes de este cambio no tendrán código corto (quedará vacío), pero su ID largo sigue funcionando igual en `/scan`.
-
-## Novedades de esta versión
-
-- **Acceso de empleados con contraseña**: ya existía (`/scan` pedía `ADMIN_PASSWORD`), y ahora también protege directamente los endpoints de sumar/canjear estrella (antes solo protegía la pantalla, no la API).
-- **El cliente puede ver sus estrellas cuando quiera**: al registrarse, su código se guarda en el navegador (localStorage), así que si vuelve a entrar a la página ve su tarjeta directo. También hay una página `/mi-tarjeta` donde puede escribir su código a mano desde cualquier dispositivo.
-- **Banner de avisos/ofertas**: configúralo desde `/admin` (mismo login que `/scan`). Se muestra arriba en la página principal cuando lo activas.
-- **Panel para ti, el dueño**: entra a `/admin` para ver cuántos clientes tienes, su nombre/teléfono/estrellas, y exportar todo a un CSV (útil para WhatsApp/Excel).
 
 ## Qué falta para la versión completa
 
 - [ ] Generar el QR visual real en la página de bienvenida (ahora mismo se muestra el ID como texto)
 - [ ] Botón "Agregar a Apple Wallet / Google Wallet" (integración con PassKit o PassSlot)
-- [ ] Historial de compras por cliente dentro del panel `/admin`
-- [ ] Separar contraseña de "empleado" (solo escanear) y de "dueño" (ver panel completo), hoy comparten la misma
+- [ ] Botón de canjear premio en la pantalla de escaneo
+- [ ] Panel simple para ti, el dueño, para ver todos los clientes y su historial
 
 Dile a Claude cuando quieras seguir con cualquiera de estos puntos.

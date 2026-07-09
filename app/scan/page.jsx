@@ -107,9 +107,6 @@ export default function ScanPage() {
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <img src="/logo-circular.png" alt="La Gallina Rebelde" style={{ width: 90, height: 90, borderRadius: '50%' }} />
           <h1 style={{ fontSize: 20, marginTop: 12, color: DORADO, letterSpacing: 1 }}>ESCANEAR CLIENTE</h1>
-          <a href="/admin" style={{ display: 'inline-block', marginTop: 8, color: '#888', fontSize: 12, textDecoration: 'none' }}>
-            Ver panel de clientes / avisos →
-          </a>
         </div>
 
         <div id="lector-qr" style={{ width: '100%', borderRadius: 12, overflow: 'hidden', border: `2px solid ${DORADO}` }} />
