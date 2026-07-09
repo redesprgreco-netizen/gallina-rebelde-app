@@ -1,4 +1,4 @@
-import { buscarClientePorTelefono } from '../../../../lib/buscarCliente'
+import { buscarClientePorTelefono } from '../../../../../lib/buscarCliente'
 
 // GET /api/clientes/telefono/:telefono -> el cliente consulta su propia tarjeta con su número
 export async function GET(req, { params }) {
